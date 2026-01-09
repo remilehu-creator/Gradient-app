@@ -19,7 +19,7 @@ TRANSLATIONS = {
     "en": {
         "lang_name": "English",
         "page_title": "Geothermal gradient",
-        "title": "Geothermal gradient — cece",
+        "title": "Geothermal gradient — Ladispoli",
         "sidebar_data": "1) Data",
         "upload_csv": "Upload CSV (gradient_geo.csv)",
         "separator": "Separator",
