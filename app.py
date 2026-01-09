@@ -577,9 +577,7 @@ def add_contours_geojson_layer(
         """Robust parse: accepts 20, '20', '20.0', '20,0', '20 m', etc."""
         if val is None:
             return None
-        s = str(val).strip()
-        s = s.replace(",", ".")
-        # keep digits, dot, minus
+        s = str(val).strip().replace(",", ".")
         cleaned = "".join(ch for ch in s if (ch.isdigit() or ch in ".-"))
         if cleaned in ("", ".", "-", "-."):
             return None
@@ -599,7 +597,6 @@ def add_contours_geojson_layer(
         if val_num is None:
             continue
 
-        # robust "every 20": round then modulo
         val_int = int(round(val_num))
         if val_int % 20 != 0:
             continue
@@ -610,22 +607,26 @@ def add_contours_geojson_layer(
 
         lon, lat = pt
 
-        folium.DivIcon(
-            html=f"""
-            <div style="
-                font-size:14px;
-                font-weight:700;
-                color:#b00000;
-                background:rgba(255,255,255,0.95);
-                padding:4px 8px;
-                border:2px solid #b00000;
-                border-radius:6px;
-                box-shadow:0 1px 4px rgba(0,0,0,0.35);
-                white-space:nowrap;
-    ">{val_int}</div>
-    """
-        )
+        # ✅ IMPORTANT: DivIcon must be attached to a Marker
+        folium.Marker(
+            location=[lat, lon],
+            icon=folium.DivIcon(
+                html=f"""
+                <div style="
+                    font-size:14px;
+                    font-weight:700;
+                    color:#b00000;
+                    background:rgba(255,255,255,0.95);
+                    padding:6px 10px;
+                    border:2px solid #b00000;
+                    border-radius:8px;
+                    box-shadow:0 1px 4px rgba(0,0,0,0.35);
+                    white-space:nowrap;
+                ">{val_int}</div>
+                """
+            ),
         ).add_to(m)
+
 
 
 
