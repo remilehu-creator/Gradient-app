@@ -511,29 +511,45 @@ def load_geojson(path: Path):
         return json.load(f)
 
 
-def _line_midpoint_lonlat(geometry):
+def _label_point_lonlat(geometry):
     """
-    Return an approximate midpoint (lon, lat) of a LineString or MultiLineString.
-    If geometry is not supported, return None.
+    Return a label point (lon, lat) for LineString/MultiLineString/Polygon/MultiPolygon.
     """
     gtype = geometry.get("type")
     coords = geometry.get("coordinates")
 
+    # --- Lines ---
     if gtype == "LineString" and isinstance(coords, list) and len(coords) > 1:
-        mid = coords[len(coords) // 2]
-        return float(mid[0]), float(mid[1])
+        lon, lat = coords[len(coords) // 2]
+        return float(lon), float(lat)
 
     if gtype == "MultiLineString" and isinstance(coords, list) and len(coords) > 0:
-        # choose the longest line for labeling
-        best = None
-        best_len = -1
-        for line in coords:
-            if isinstance(line, list) and len(line) > best_len:
-                best = line
-                best_len = len(line)
-        if best and len(best) > 1:
-            mid = best[len(best) // 2]
-            return float(mid[0]), float(mid[1])
+        # choose the longest line
+        best = max(coords, key=lambda line: len(line) if isinstance(line, list) else 0)
+        if isinstance(best, list) and len(best) > 1:
+            lon, lat = best[len(best) // 2]
+            return float(lon), float(lat)
+
+    # --- Polygons (use a crude centroid of the outer ring) ---
+    def centroid_of_ring(ring):
+        # ring = [[lon,lat], ...]
+        xs = [p[0] for p in ring if isinstance(p, list) and len(p) >= 2]
+        ys = [p[1] for p in ring if isinstance(p, list) and len(p) >= 2]
+        if not xs or not ys:
+            return None
+        return float(sum(xs) / len(xs)), float(sum(ys) / len(ys))
+
+    if gtype == "Polygon" and isinstance(coords, list) and len(coords) > 0:
+        outer = coords[0]
+        c = centroid_of_ring(outer)
+        return c
+
+    if gtype == "MultiPolygon" and isinstance(coords, list) and len(coords) > 0:
+        # pick first polygon outer ring
+        outer = coords[0][0] if isinstance(coords[0], list) and len(coords[0]) > 0 else None
+        if outer:
+            c = centroid_of_ring(outer)
+            return c
 
     return None
 
