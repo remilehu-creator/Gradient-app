@@ -24,7 +24,7 @@ EMBEDDED_CSV = BASE_DIR / "data" / "gradient_geo.csv"
 CONTOUR_GEOJSON = BASE_DIR / "data" / "contours_gradient.geojson"
 
 # UTM 33N -> WGS84 for map (your case)
-TRANSFORMER_UTM33N_TO_WGS84 = Transformer.from_crs("EPSG:32633", "EPSG:4326", always_xy=True)
+#TRANSFORMER_UTM33N_TO_WGS84 = Transformer.from_crs("EPSG:32633", "EPSG:4326", always_xy=True)
 
 
 # ---------------------------
@@ -504,24 +504,6 @@ def make_figure(depths, T_mean, T_std, params, lang):
     plt.tight_layout()
     return fig
 
-
-def utm33_to_lonlat(df_xy: pd.DataFrame) -> pd.DataFrame:
-    """
-    Convert X/Y from UTM 33N (EPSG:32633) to lon/lat (EPSG:4326).
-    Returns a new df with columns lon, lat.
-    """
-    xy = df_xy[["X", "Y"]].dropna()
-    if xy.empty:
-        return pd.DataFrame(columns=["lon", "lat"])
-
-    xs = xy["X"].to_numpy(dtype=float)
-    ys = xy["Y"].to_numpy(dtype=float)
-    lons, lats = TRANSFORMER_UTM33N_TO_WGS84.transform(xs, ys)
-
-    out = pd.DataFrame({"lon": lons, "lat": lats}, index=xy.index)
-    return out
-
-
 def load_geojson(path: Path):
     if not path.exists():
         return None
@@ -781,7 +763,7 @@ GRAD_LADISPOLI_LABEL = st.sidebar.text_input(t(lang_code, "grad_local_label"), v
 # Map controls
 st.sidebar.header(t(lang_code, "map_title"))
 MAP_HEIGHT = st.sidebar.slider(t(lang_code, "map_height"), 220, 1200, 550, 10)
-SHOW_MAP_POINTS = st.sidebar.checkbox(t(lang_code, "map_points"), value=False)
+#SHOW_MAP_POINTS = st.sidebar.checkbox(t(lang_code, "map_points"), value=False)
 SHOW_CONTOURS = st.sidebar.checkbox(t(lang_code, "map_contours"), value=True)
 SHOW_LABELS_20 = st.sidebar.checkbox(t(lang_code, "map_labels"), value=True)
 LEVEL_FIELD = st.sidebar.text_input(t(lang_code, "map_level_field"), value="LEVEL")
@@ -900,20 +882,7 @@ with col1:
         control=True,
     ).add_to(m)
 
-    # Optional: points from df converted from UTM 33N
-    if SHOW_MAP_POINTS and ("X" in df.columns) and ("Y" in df.columns):
-        lonlat_df = utm33_to_lonlat(df[["X", "Y"]])
-        if not lonlat_df.empty:
-            for _, r in lonlat_df.iterrows():
-                folium.CircleMarker(
-                    location=[float(r["lat"]), float(r["lon"])],
-                    radius=4,
-                    fill=True,
-                    fill_opacity=0.9,
-                    opacity=0.9,
-                ).add_to(m)
-
-    # Contours (GeoJSON) + labels every 20
+       # Contours (GeoJSON) + labels every 20
     if SHOW_CONTOURS:
         contours = load_geojson(CONTOUR_GEOJSON)
         if contours is None:
