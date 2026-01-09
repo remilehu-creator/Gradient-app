@@ -134,7 +134,7 @@ TRANSLATIONS = {
         "map_height": "Map height",
         "map_points": "Show points (if X=lon, Y=lat)",
         "map_contours": "Show contour lines (SHP/GeoJSON) in red",
-        "map_warn_coords": "Points not displayed (X/Y don't look like lon/lat).",
+        #"map_warn_coords": "Points not displayed (X/Y don't look like lon/lat).",
         "map_missing_contours": "Contour file not found. Put shapefile in data/contours/ or provide data/contours_gradient.geojson.",
     },
     "fr": {
