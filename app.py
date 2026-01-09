@@ -105,6 +105,7 @@ TRANSLATIONS = {
         "legend_frame": "Legend box",
         "legend_ncol": "Legend columns",
         "legend_font": "Legend font size",
+        "map_warn_coords": "Points not displayed (X/Y don't look like lon/lat).",
         "legend_yoffset": "Legend vertical position",
         "sidebar_texts": "9) Text labels",
         "env_label": "Envelope label",
