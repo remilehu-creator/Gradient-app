@@ -5,6 +5,8 @@
 
 import io
 from pathlib import Path
+import folium
+from streamlit_folium import st_folium
 
 import numpy as np
 import pandas as pd
@@ -727,6 +729,37 @@ with col1:
         file_name="figure.png",
         mime="image/png",
     )
+
+    
+    ITALY_CENTER = [41.8719, 12.5674]  # lat, lon
+    DEFAULT_ZOOM = 5
+
+    m = folium.Map(
+        location=ITALY_CENTER,
+        zoom_start=DEFAULT_ZOOM,
+        control_scale=True,
+        tiles=None,
+    )
+
+    folium.TileLayer(
+        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+        attr="Esri",
+        name="Esri Streets",
+        overlay=False,
+        control=True,
+    ).add_to(m)
+
+    folium.TileLayer(
+        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        attr="Esri",
+        name="Esri Satellite",
+        overlay=False,
+        control=True,
+    ).add_to(m)
+
+    folium.LayerControl().add_to(m)
+
+    st_folium(m, width=None, height=260)
 
 with col2:
     st.subheader(t(lang_code, "summary"))
