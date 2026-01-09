@@ -11,7 +11,7 @@ import streamlit as st
 from pathlib import Path
 import pandas as pd
 
-DATA_PATH = Path(__file__).parent / "data" / "ton_fichier.csv"
+DATA_PATH = Path(__file__).parent / "data" / "gradient_geo.csv"
 df = pd.read_csv(DATA_PATH)
 
 
