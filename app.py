@@ -478,7 +478,7 @@ def make_figure(depths, T_mean, T_std, params, lang):
             label=f"{params['GRAD_LADISPOLI_LABEL']} : {G_LADISPOLI:.0f} °C/km"
         )
 
-   # Global geothermal gradient (classical ~30 °C/km)
+    # Global geothermal gradient (classical ~30 °C/km)
     if params["SHOW_GRAD_GLOBAL"]:
         G_GLOBAL = params["G_GLOBAL"]
     
@@ -803,7 +803,7 @@ GRAD_LADISPOLI_LW = st.sidebar.slider(t(lang_code, "grad_local_lw"), 0.5, 5.0, 2
 
 SHOW_GRAD_GLOBAL = st.sidebar.checkbox(
     "Show global gradient (30 °C/km)",
-    value=False
+    value=True
 )
 
 GRAD_GLOBAL_COLOR = st.sidebar.color_picker(
