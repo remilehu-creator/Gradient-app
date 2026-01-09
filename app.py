@@ -874,7 +874,7 @@ with col1:
     add_contours_layer(m, lang_code=lang_code, show_contours=SHOW_CONTOURS)
 
     folium.LayerControl().add_to(m)
-    st_folium(m, width=None, height=int(MAP_HEIGHT=500))
+    st_folium(m, width=None, height=500)
 
 with col2:
     st.subheader(t(lang_code, "summary"))
