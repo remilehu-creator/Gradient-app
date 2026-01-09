@@ -759,7 +759,7 @@ with col1:
 
     folium.LayerControl().add_to(m)
 
-    st_folium(m, width=None, height=260)
+    st_folium(m, width=None, height=500)
 
 with col2:
     st.subheader(t(lang_code, "summary"))
