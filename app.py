@@ -611,20 +611,20 @@ def add_contours_geojson_layer(
         lon, lat = pt
 
         folium.DivIcon(
-    html=f"""
-    <div style="
-        font-size:14px;
-        font-weight:700;
-        color:#b00000;
-        background:rgba(255,255,255,0.95);
-        padding:4px 8px;
-        border:2px solid #b00000;
-        border-radius:6px;
-        box-shadow:0 1px 4px rgba(0,0,0,0.35);
-        white-space:nowrap;
+            html=f"""
+            <div style="
+                font-size:14px;
+                font-weight:700;
+                color:#b00000;
+                background:rgba(255,255,255,0.95);
+                padding:4px 8px;
+                border:2px solid #b00000;
+                border-radius:6px;
+                box-shadow:0 1px 4px rgba(0,0,0,0.35);
+                white-space:nowrap;
     ">{val_int}</div>
     """
-)
+        )
         ).add_to(m)
 
 
