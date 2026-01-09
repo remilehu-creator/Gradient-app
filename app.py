@@ -954,5 +954,5 @@ with col2:
     st.subheader(t(lang_code, "summary"))
     st.write(pd.DataFrame({"z (m)": depths, "T_mean (°C)": T_mean, "sigma (°C)": T_std}))
 
-    st.subheader(t(lang_code, "csv_help"))
-    st.write(t(lang_code, "csv_help_text"))
+    #st.subheader(t(lang_code, "csv_help"))
+    #st.write(t(lang_code, "csv_help_text"))
