@@ -613,13 +613,15 @@ def add_contours_geojson_layer(
             icon=folium.DivIcon(
                 html=f"""
                 <div style="
-                    font-size:14px;
+                    min-width:32px;
+                    padding:2px 6px;
+                    text-align:center;
+                    font-size:13px;
                     font-weight:700;
                     color:#b00000;
                     background:rgba(255,255,255,0.95);
-                    padding:10px 20px;
                     border:2px solid #b00000;
-                    border-radius:8px;
+                    border-radius:6px;
                     box-shadow:0 1px 4px rgba(0,0,0,0.35);
                     white-space:nowrap;
                 ">{val_int}</div>
