@@ -600,7 +600,7 @@ def add_contours_geojson_layer(
                     background:rgba(255,255,255,0.85);
                     padding:2px 4px;
                     #border:1px solid rgba(255,0,0,0.5);
-                    border-radius:3px;
+                    #border-radius:3px;
                     white-space:nowrap;
                 ">{int(val_num) if val_num.is_integer() else val_num}</div>
                 """
