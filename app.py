@@ -4,16 +4,12 @@
 # Compatible Python 3.7+ (no walrus :=)
 
 import io
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
-from pathlib import Path
-import pandas as pd
-
-DATA_PATH = Path(__file__).parent / "data" / "gradient_geo.csv"
-df = pd.read_csv(DATA_PATH)
-
 
 
 # ---------------------------
@@ -112,6 +108,11 @@ TRANSLATIONS = {
         "default_err_label": "Measured ±1σ",
         "default_grad_mean_label": "Mean gradient",
         "default_grad_local_label": "Ladispoli gradient",
+        # Added (minimal) strings for local data behavior:
+        "use_uploaded": "Use uploaded CSV (otherwise use embedded data file)",
+        "using_embedded": "Using embedded data file:",
+        "missing_embedded": "Embedded file missing. Upload a CSV or enable demo mode.",
+        "loaded_rows": "Loaded rows",
     },
     "fr": {
         "lang_name": "Français",
@@ -205,6 +206,11 @@ TRANSLATIONS = {
         "default_err_label": "±1σ mesuré",
         "default_grad_mean_label": "Gradient moyen",
         "default_grad_local_label": "Gradient Ladispoli",
+        # Added (minimal) strings for local data behavior:
+        "use_uploaded": "Utiliser le CSV uploadé (sinon utiliser le fichier embarqué)",
+        "using_embedded": "Fichier embarqué utilisé :",
+        "missing_embedded": "Fichier embarqué manquant. Uploade un CSV ou active le mode démo.",
+        "loaded_rows": "Lignes chargées",
     },
     "it": {
         "lang_name": "Italiano",
@@ -298,12 +304,19 @@ TRANSLATIONS = {
         "default_err_label": "±1σ misurato",
         "default_grad_mean_label": "Gradiente medio",
         "default_grad_local_label": "Gradiente Ladispoli",
+        # Added (minimal) strings for local data behavior:
+        "use_uploaded": "Usa CSV caricato (altrimenti usa file incorporato)",
+        "using_embedded": "Uso file incorporato:",
+        "missing_embedded": "File incorporato mancante. Carica un CSV o abilita demo.",
+        "loaded_rows": "Righe caricate",
     },
 }
 
-LANG_OPTIONS = [("en", TRANSLATIONS["en"]["lang_name"]),
-                ("fr", TRANSLATIONS["fr"]["lang_name"]),
-                ("it", TRANSLATIONS["it"]["lang_name"])]
+LANG_OPTIONS = [
+    ("en", TRANSLATIONS["en"]["lang_name"]),
+    ("fr", TRANSLATIONS["fr"]["lang_name"]),
+    ("it", TRANSLATIONS["it"]["lang_name"]),
+]
 
 
 def t(lang, key):
@@ -381,53 +394,65 @@ def make_figure(depths, T_mean, T_std, params, lang):
     fig = plt.figure(figsize=params["FIGSIZE"])
 
     plt.fill_betweenx(
-        z_line, T_env_low, T_env_high,
-        color=params["ENV_COLOR"], alpha=params["ENV_ALPHA"],
-        label=params["ENV_LABEL"]
+        z_line,
+        T_env_low,
+        T_env_high,
+        color=params["ENV_COLOR"],
+        alpha=params["ENV_ALPHA"],
+        label=params["ENV_LABEL"],
     )
 
     plt.plot(
-        T_line, z_line,
-        color=params["MEAN_COLOR"], linewidth=params["MEAN_LW"],
+        T_line,
+        z_line,
+        color=params["MEAN_COLOR"],
+        linewidth=params["MEAN_LW"],
         linestyle=params["MEAN_LS"],
-        label=params["MEAN_LABEL"]
+        label=params["MEAN_LABEL"],
     )
 
     if params["SHOW_POINTS"]:
         plt.plot(
-            T_mean, depths,
-            marker=params["PTS_MARKER"], markersize=params["PTS_MS"],
-            color=params["PTS_COLOR"], linestyle="none",
-            label=params["PTS_LABEL"]
+            T_mean,
+            depths,
+            marker=params["PTS_MARKER"],
+            markersize=params["PTS_MS"],
+            color=params["PTS_COLOR"],
+            linestyle="none",
+            label=params["PTS_LABEL"],
         )
 
     if params["SHOW_ERR"]:
         plt.errorbar(
-            T_mean, depths, xerr=T_std,
+            T_mean,
+            depths,
+            xerr=T_std,
             fmt="none",
             ecolor=params["ERR_ECOLOR"],
             elinewidth=params["ERR_ELW"],
             capsize=params["ERR_CAP"],
             alpha=params["ERR_ALPHA"],
-            label=params["ERR_LABEL"]
+            label=params["ERR_LABEL"],
         )
 
     if params["SHOW_GRAD_MEAN"]:
         plt.plot(
-            T_grad_mean, z_line,
+            T_grad_mean,
+            z_line,
             color=params["GRAD_MEAN_COLOR"],
             linestyle=params["GRAD_MEAN_LS"],
             linewidth=params["GRAD_MEAN_LW"],
-            label=f"{params['GRAD_MEAN_LABEL']} : {G_mean_profile:.1f} °C/km"
+            label=f"{params['GRAD_MEAN_LABEL']} : {G_mean_profile:.1f} °C/km",
         )
 
     if params["SHOW_GRAD_LADISPOLI"]:
         plt.plot(
-            T_grad_ladispoli, z_line,
+            T_grad_ladispoli,
+            z_line,
             color=params["GRAD_LADISPOLI_COLOR"],
             linestyle=params["GRAD_LADISPOLI_LS"],
             linewidth=params["GRAD_LADISPOLI_LW"],
-            label=f"{params['GRAD_LADISPOLI_LABEL']} : {G_LADISPOLI:.0f} °C/km"
+            label=f"{params['GRAD_LADISPOLI_LABEL']} : {G_LADISPOLI:.0f} °C/km",
         )
 
     plt.ylim(Z_MAX, 0)
@@ -452,7 +477,7 @@ def make_figure(depths, T_mean, T_std, params, lang):
             bbox_to_anchor=(0.5, params["LEGEND_YOFFSET"]),
             ncol=params["LEGEND_NCOL"],
             frameon=params["LEGEND_FRAME"],
-            fontsize=params["LEGEND_FONT"]
+            fontsize=params["LEGEND_FONT"],
         )
 
     plt.tight_layout()
@@ -464,13 +489,17 @@ def make_figure(depths, T_mean, T_std, params, lang):
 # ---------------------------
 st.set_page_config(page_title=TRANSLATIONS["en"]["page_title"], layout="wide")
 
+# Paths (embedded data)
+BASE_DIR = Path(__file__).parent
+EMBEDDED_CSV = BASE_DIR / "data" / "gradient_geo.csv"
+
 # Language selector
 st.sidebar.header("Language / Langue / Lingua")
 lang_code = st.sidebar.selectbox(
     "Select UI language",
     options=[code for code, _ in LANG_OPTIONS],
     format_func=lambda c: dict(LANG_OPTIONS)[c],
-    index=0
+    index=0,
 )
 
 st.title(t(lang_code, "title"))
@@ -479,7 +508,10 @@ st.title(t(lang_code, "title"))
 st.sidebar.header(t(lang_code, "sidebar_data"))
 uploaded = st.sidebar.file_uploader(t(lang_code, "upload_csv"), type=["csv"])
 sep = st.sidebar.selectbox(t(lang_code, "separator"), options=[";", ",", "\t"], index=0)
-use_demo = st.sidebar.checkbox(t(lang_code, "demo_mode"), value=(uploaded is None))
+
+# NEW: default is embedded file; upload is optional
+use_uploaded = st.sidebar.checkbox(t(lang_code, "use_uploaded"), value=(uploaded is not None))
+use_demo = st.sidebar.checkbox(t(lang_code, "demo_mode"), value=False)
 
 if use_demo:
     rng = np.random.default_rng(0)
@@ -495,13 +527,20 @@ if use_demo:
     )
     df, depths, T_mean, T_std = compute_stats(df_demo)
     st.info(t(lang_code, "demo_info"))
+
 else:
-    if uploaded is None:
-        st.warning(t(lang_code, "need_file_warning"))
-        st.stop()
     try:
-        df_raw = pd.read_csv(uploaded, sep=sep)
+        if use_uploaded and uploaded is not None:
+            df_raw = pd.read_csv(uploaded, sep=sep)
+        else:
+            if not EMBEDDED_CSV.exists():
+                st.warning(t(lang_code, "missing_embedded"))
+                st.stop()
+            df_raw = pd.read_csv(EMBEDDED_CSV, sep=sep)
+            st.caption(f"{t(lang_code, 'using_embedded')} {EMBEDDED_CSV.name} — {t(lang_code, 'loaded_rows')}: {len(df_raw)}")
+
         df, depths, T_mean, T_std = compute_stats(df_raw)
+
     except Exception as e:
         st.error(f"{t(lang_code, 'csv_error')} {e}")
         st.stop()
