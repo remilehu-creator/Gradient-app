@@ -867,8 +867,8 @@ with col1:
                     fill=True,
                     fill_opacity=0.9,
                 ).add_to(m)
-        else:
-            st.info(t(lang_code, "map_warn_coords"))
+        #else:
+           # st.info(t(lang_code, "map_warn_coords"))
 
     # Contours layer (GeoJSON preferred; otherwise SHP)
     add_contours_layer(m, lang_code=lang_code, show_contours=SHOW_CONTOURS)
