@@ -939,7 +939,7 @@ col1, col2 = st.columns([2.2, 1.0], gap="large")
 
 with col1:
     fig = make_figure(depths, T_mean, T_std, params, lang_code)
-    st.pyplot(fig, clear_figure=True)
+    st.pyplot(fig, clear_figure=False)
 
     png_bytes = fig_to_png_bytes(fig, dpi=200)
     st.download_button(
