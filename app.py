@@ -19,7 +19,7 @@ TRANSLATIONS = {
     "en": {
         "lang_name": "English",
         "page_title": "Geothermal gradient",
-        "title": "Geothermal gradient — fully adjustable",
+        "title": "Geothermal gradient — Ladispoli",
         "sidebar_data": "1) Data",
         "upload_csv": "Upload CSV (gradient_geo.csv)",
         "separator": "Separator",
@@ -117,7 +117,7 @@ TRANSLATIONS = {
     "fr": {
         "lang_name": "Français",
         "page_title": "Gradient géothermique",
-        "title": "Gradient géothermique — entièrement paramétrable",
+        "title": "Gradient géothermique — Ladispoli",
         "sidebar_data": "1) Données",
         "upload_csv": "Charger le CSV (gradient_geo.csv)",
         "separator": "Séparateur",
@@ -215,7 +215,7 @@ TRANSLATIONS = {
     "it": {
         "lang_name": "Italiano",
         "page_title": "Gradiente geotermico",
-        "title": "Gradiente geotermico — completamente regolabile",
+        "title": "Gradiente geotermico — Ladispoli",
         "sidebar_data": "1) Dati",
         "upload_csv": "Carica CSV (gradient_geo.csv)",
         "separator": "Separatore",
