@@ -478,6 +478,22 @@ def make_figure(depths, T_mean, T_std, params, lang):
             label=f"{params['GRAD_LADISPOLI_LABEL']} : {G_LADISPOLI:.0f} °C/km"
         )
 
+   # Global geothermal gradient (classical ~30 °C/km)
+    if params["SHOW_GRAD_GLOBAL"]:
+        G_GLOBAL = params["G_GLOBAL"]
+    
+        T_grad_global = T_REF + (G_GLOBAL / 1000.0) * (z_line - Z_REF)
+    
+        plt.plot(
+            T_grad_global,
+            z_line,
+            color=params["GRAD_GLOBAL_COLOR"],
+            linestyle=params["GRAD_GLOBAL_LS"],
+            linewidth=params["GRAD_GLOBAL_LW"],
+            label=f"{params['GRAD_GLOBAL_LABEL']} : {G_GLOBAL:.0f} °C/km"
+        )
+
+
     plt.ylim(Z_MAX, 0)
     if params["XLIM_ON"]:
         plt.xlim(params["XLIM_MIN"], params["XLIM_MAX"])
@@ -710,6 +726,12 @@ T_REF = st.sidebar.number_input(t(lang_code, "t_ref"), value=25.0, step=0.5)
 Z_REF = st.sidebar.number_input(t(lang_code, "z_ref"), value=0.0, step=10.0)
 G_LADISPOLI = st.sidebar.number_input(t(lang_code, "g_local"), value=60.0, step=1.0)
 
+G_GLOBAL = st.sidebar.number_input(
+    "Global geothermal gradient (°C/km)",
+    value=30.0,
+    step=1.0
+)
+
 # Depth / resolution
 st.sidebar.header(t(lang_code, "sidebar_depth"))
 Z_MAX = st.sidebar.slider(t(lang_code, "z_max"), min_value=500, max_value=5000, value=2500, step=100)
@@ -778,6 +800,29 @@ SHOW_GRAD_LADISPOLI = st.sidebar.checkbox(t(lang_code, "show_grad_local"), value
 GRAD_LADISPOLI_COLOR = st.sidebar.color_picker(t(lang_code, "grad_local_color"), "#d62728")
 GRAD_LADISPOLI_LS = st.sidebar.selectbox(t(lang_code, "grad_local_ls"), ["-", "--", ":", "-."], index=1)
 GRAD_LADISPOLI_LW = st.sidebar.slider(t(lang_code, "grad_local_lw"), 0.5, 5.0, 2.2, 0.1)
+
+SHOW_GRAD_GLOBAL = st.sidebar.checkbox(
+    "Show global gradient (30 °C/km)",
+    value=False
+)
+
+GRAD_GLOBAL_COLOR = st.sidebar.color_picker(
+    "Global gradient color",
+    "#2ca02c"
+)
+
+GRAD_GLOBAL_LS = st.sidebar.selectbox(
+    "Global gradient line style",
+    ["-", "--", ":", "-."],
+    index=0
+)
+
+GRAD_GLOBAL_LW = st.sidebar.slider(
+    "Global gradient line width",
+    0.5, 5.0, 2.0, 0.1
+)
+
+
 
 # Grid
 st.sidebar.header(t(lang_code, "sidebar_grid"))
@@ -854,6 +899,14 @@ params = {
     "GRAD_LADISPOLI_LS": GRAD_LADISPOLI_LS,
     "GRAD_LADISPOLI_LW": float(GRAD_LADISPOLI_LW),
     "GRAD_LADISPOLI_LABEL": GRAD_LADISPOLI_LABEL,
+
+    "SHOW_GRAD_GLOBAL": bool(SHOW_GRAD_GLOBAL),
+    "G_GLOBAL": float(G_GLOBAL),
+    "GRAD_GLOBAL_COLOR": GRAD_GLOBAL_COLOR,
+    "GRAD_GLOBAL_LS": GRAD_GLOBAL_LS,
+    "GRAD_GLOBAL_LW": float(GRAD_GLOBAL_LW),
+    "GRAD_GLOBAL_LABEL": "Global gradient",
+
 
     "GRID_ON": bool(GRID_ON),
     "GRID_STYLE": GRID_STYLE,
