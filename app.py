@@ -766,7 +766,7 @@ MAP_HEIGHT = st.sidebar.slider(t(lang_code, "map_height"), 220, 1200, 550, 10)
 #SHOW_MAP_POINTS = st.sidebar.checkbox(t(lang_code, "map_points"), value=False)
 SHOW_CONTOURS = st.sidebar.checkbox(t(lang_code, "map_contours"), value=True)
 SHOW_LABELS_20 = st.sidebar.checkbox(t(lang_code, "map_labels"), value=True)
-LEVEL_FIELD = st.sidebar.text_input(t(lang_code, "map_level_field"), value="LEVEL")
+LEVEL_FIELD = st.sidebar.text_input(t(lang_code, "map_level_field"), value="ELEV")
 
 params = {
     "Z_MAX": float(Z_MAX),
