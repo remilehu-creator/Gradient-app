@@ -899,7 +899,7 @@ with col1:
     # ---------------------------
     # Embedded "Geoportail-like" basemap (Italy-centered) + contours + labels every 20
     # ---------------------------
-    ITALY_CENTER = [42.04771109366114, 12.123010671078132]  # lat, lon
+    ITALY_CENTER = [42.023040637659676, 12.127159443730562]  # lat, lon
     DEFAULT_ZOOM = 12
 
     m = folium.Map(
