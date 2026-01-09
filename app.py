@@ -1,17 +1,33 @@
 # app.py
 # Streamlit app — Geothermal gradient (fully adjustable)
 # UI language: English by default, switchable to French / Italian in a menu.
-# Compatible Python 3.7+ (no walrus :=)
 
 import io
+import json
 from pathlib import Path
-import folium
-from streamlit_folium import st_folium
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
+
+import folium
+from streamlit_folium import st_folium
+
+
+# ---------------------------
+# Files (embedded data)
+# ---------------------------
+BASE_DIR = Path(__file__).parent
+EMBEDDED_CSV = BASE_DIR / "data" / "gradient_geo.csv"
+
+# Shapefile path (put your shapefile components in this folder)
+# data/contours/contours.shp + .shx + .dbf + .prj
+CONTOUR_SHP = BASE_DIR / "data" / "gradient_geo.shp"
+
+# Optional: if you provide a GeoJSON instead, the app will prefer it (more reliable)
+# data/contours_gradient.geojson
+CONTOUR_GEOJSON = BASE_DIR / "data" / "contours_gradient.geojson"
 
 
 # ---------------------------
@@ -21,14 +37,18 @@ TRANSLATIONS = {
     "en": {
         "lang_name": "English",
         "page_title": "Geothermal gradient",
-        "title": "Geothermal gradient — Ladispoli",
+        "title": "Geothermal gradient — fully adjustable",
         "sidebar_data": "1) Data",
         "upload_csv": "Upload CSV (gradient_geo.csv)",
+        "use_uploaded": "Use uploaded CSV (otherwise use embedded file)",
         "separator": "Separator",
-        "demo_mode": "Demo mode (if no file)",
+        "demo_mode": "Demo mode (ignore file)",
         "demo_info": "Demo mode: synthetic data.",
         "need_file_warning": "Upload a CSV or enable demo mode.",
         "csv_error": "CSV read/format error:",
+        "missing_embedded": "Embedded CSV missing. Upload a file or enable demo mode.",
+        "using_embedded": "Using embedded data file:",
+        "loaded_rows": "Loaded rows",
         "sidebar_refs": "2) Reference & gradients",
         "t_ref": "T_REF (°C at z=0)",
         "z_ref": "Z_REF (m)",
@@ -110,23 +130,28 @@ TRANSLATIONS = {
         "default_err_label": "Measured ±1σ",
         "default_grad_mean_label": "Mean gradient",
         "default_grad_local_label": "Ladispoli gradient",
-        # Added (minimal) strings for local data behavior:
-        "use_uploaded": "Use uploaded CSV (otherwise use embedded data file)",
-        "using_embedded": "Using embedded data file:",
-        "missing_embedded": "Embedded file missing. Upload a CSV or enable demo mode.",
-        "loaded_rows": "Loaded rows",
+        "map_title": "Basemap & geothermal gradient contours",
+        "map_height": "Map height",
+        "map_points": "Show points (if X=lon, Y=lat)",
+        "map_contours": "Show contour lines (SHP/GeoJSON) in red",
+        "map_warn_coords": "Points not displayed (X/Y don't look like lon/lat).",
+        "map_missing_contours": "Contour file not found. Put shapefile in data/contours/ or provide data/contours_gradient.geojson.",
     },
     "fr": {
         "lang_name": "Français",
         "page_title": "Gradient géothermique",
-        "title": "Gradient géothermique — Ladispoli",
+        "title": "Gradient géothermique — entièrement paramétrable",
         "sidebar_data": "1) Données",
         "upload_csv": "Charger le CSV (gradient_geo.csv)",
+        "use_uploaded": "Utiliser le CSV uploadé (sinon utiliser le fichier embarqué)",
         "separator": "Séparateur",
-        "demo_mode": "Mode démo (si pas de fichier)",
+        "demo_mode": "Mode démo (ignore le fichier)",
         "demo_info": "Mode démo : données synthétiques.",
         "need_file_warning": "Charge un CSV ou active le mode démo.",
         "csv_error": "Erreur lecture/format CSV :",
+        "missing_embedded": "CSV embarqué manquant. Uploade un fichier ou active le mode démo.",
+        "using_embedded": "Fichier embarqué utilisé :",
+        "loaded_rows": "Lignes chargées",
         "sidebar_refs": "2) Références & gradients",
         "t_ref": "T_REF (°C à z=0)",
         "z_ref": "Z_REF (m)",
@@ -208,23 +233,28 @@ TRANSLATIONS = {
         "default_err_label": "±1σ mesuré",
         "default_grad_mean_label": "Gradient moyen",
         "default_grad_local_label": "Gradient Ladispoli",
-        # Added (minimal) strings for local data behavior:
-        "use_uploaded": "Utiliser le CSV uploadé (sinon utiliser le fichier embarqué)",
-        "using_embedded": "Fichier embarqué utilisé :",
-        "missing_embedded": "Fichier embarqué manquant. Uploade un CSV ou active le mode démo.",
-        "loaded_rows": "Lignes chargées",
+        "map_title": "Fond de carte & courbes de niveaux du gradient",
+        "map_height": "Hauteur de la carte",
+        "map_points": "Afficher les points (si X=lon, Y=lat)",
+        "map_contours": "Afficher les courbes (SHP/GeoJSON) en rouge",
+        "map_warn_coords": "Points non affichés (X/Y ne ressemblent pas à lon/lat).",
+        "map_missing_contours": "Fichier de courbes introuvable. Mets le SHP dans data/contours/ ou fournis data/contours_gradient.geojson.",
     },
     "it": {
         "lang_name": "Italiano",
         "page_title": "Gradiente geotermico",
-        "title": "Gradiente geotermico — Ladispoli",
+        "title": "Gradiente geotermico — completamente regolabile",
         "sidebar_data": "1) Dati",
         "upload_csv": "Carica CSV (gradient_geo.csv)",
+        "use_uploaded": "Usa CSV caricato (altrimenti usa file incorporato)",
         "separator": "Separatore",
-        "demo_mode": "Modalità demo (se non c'è file)",
+        "demo_mode": "Modalità demo (ignora il file)",
         "demo_info": "Modalità demo: dati sintetici.",
         "need_file_warning": "Carica un CSV oppure abilita la modalità demo.",
         "csv_error": "Errore lettura/formato CSV:",
+        "missing_embedded": "CSV incorporato mancante. Carica un file o abilita demo.",
+        "using_embedded": "Uso file incorporato:",
+        "loaded_rows": "Righe caricate",
         "sidebar_refs": "2) Riferimento & gradienti",
         "t_ref": "T_REF (°C a z=0)",
         "z_ref": "Z_REF (m)",
@@ -306,11 +336,12 @@ TRANSLATIONS = {
         "default_err_label": "±1σ misurato",
         "default_grad_mean_label": "Gradiente medio",
         "default_grad_local_label": "Gradiente Ladispoli",
-        # Added (minimal) strings for local data behavior:
-        "use_uploaded": "Usa CSV caricato (altrimenti usa file incorporato)",
-        "using_embedded": "Uso file incorporato:",
-        "missing_embedded": "File incorporato mancante. Carica un CSV o abilita demo.",
-        "loaded_rows": "Righe caricate",
+        "map_title": "Basemap e curve di livello del gradiente",
+        "map_height": "Altezza mappa",
+        "map_points": "Mostra punti (se X=lon, Y=lat)",
+        "map_contours": "Mostra curve (SHP/GeoJSON) in rosso",
+        "map_warn_coords": "Punti non mostrati (X/Y non sembrano lon/lat).",
+        "map_missing_contours": "File curve non trovato. Metti lo SHP in data/contours/ o fornisci data/contours_gradient.geojson.",
     },
 }
 
@@ -486,14 +517,73 @@ def make_figure(depths, T_mean, T_std, params, lang):
     return fig
 
 
+def _looks_like_lonlat(df_xy: pd.DataFrame) -> bool:
+    # Heuristic: lon in [-180, 180], lat in [-90, 90]
+    return (
+        df_xy["X"].between(-180, 180).all()
+        and df_xy["Y"].between(-90, 90).all()
+    )
+
+
+def add_contours_layer(m: folium.Map, lang_code: str, show_contours: bool = True):
+    if not show_contours:
+        return
+
+    # Prefer GeoJSON if present (lighter + more reliable)
+    if CONTOUR_GEOJSON.exists():
+        with open(CONTOUR_GEOJSON, "r", encoding="utf-8") as f:
+            contours = json.load(f)
+
+        folium.GeoJson(
+            contours,
+            name="Geothermal gradient contours",
+            style_function=lambda feature: {
+                "color": "red",
+                "weight": 2,
+                "opacity": 0.9,
+            },
+        ).add_to(m)
+        return
+
+    # Else try SHP (requires geopandas)
+    if CONTOUR_SHP.exists():
+        try:
+            import geopandas as gpd  # imported only if needed
+
+            gdf = gpd.read_file(CONTOUR_SHP)
+
+            # Reproject to WGS84 for web maps
+            try:
+                gdf = gdf.to_crs(epsg=4326)
+            except Exception:
+                # If CRS is missing/broken, keep as-is (but map may be wrong)
+                pass
+
+            geojson_str = gdf.to_json()
+            contours = json.loads(geojson_str)
+
+            folium.GeoJson(
+                contours,
+                name="Geothermal gradient contours",
+                style_function=lambda feature: {
+                    "color": "red",
+                    "weight": 2,
+                    "opacity": 0.9,
+                },
+            ).add_to(m)
+            return
+
+        except Exception as e:
+            st.warning(f"Contours SHP could not be loaded: {e}")
+            return
+
+    st.warning(t(lang_code, "map_missing_contours"))
+
+
 # ---------------------------
 # Streamlit UI
 # ---------------------------
 st.set_page_config(page_title=TRANSLATIONS["en"]["page_title"], layout="wide")
-
-# Paths (embedded data)
-BASE_DIR = Path(__file__).parent
-EMBEDDED_CSV = BASE_DIR / "data" / "gradient_geo.csv"
 
 # Language selector
 st.sidebar.header("Language / Langue / Lingua")
@@ -510,8 +600,6 @@ st.title(t(lang_code, "title"))
 st.sidebar.header(t(lang_code, "sidebar_data"))
 uploaded = st.sidebar.file_uploader(t(lang_code, "upload_csv"), type=["csv"])
 sep = st.sidebar.selectbox(t(lang_code, "separator"), options=[";", ",", "\t"], index=0)
-
-# NEW: default is embedded file; upload is optional
 use_uploaded = st.sidebar.checkbox(t(lang_code, "use_uploaded"), value=(uploaded is not None))
 use_demo = st.sidebar.checkbox(t(lang_code, "demo_mode"), value=False)
 
@@ -646,6 +734,12 @@ ERR_LABEL = st.sidebar.text_input(t(lang_code, "err_label"), value=t(lang_code, 
 GRAD_MEAN_LABEL = st.sidebar.text_input(t(lang_code, "grad_mean_label"), value=t(lang_code, "default_grad_mean_label"))
 GRAD_LADISPOLI_LABEL = st.sidebar.text_input(t(lang_code, "grad_local_label"), value=t(lang_code, "default_grad_local_label"))
 
+# Map controls
+st.sidebar.header(t(lang_code, "map_title"))
+MAP_HEIGHT = st.sidebar.slider(t(lang_code, "map_height"), 220, 900, 450, 10)
+SHOW_MAP_POINTS = st.sidebar.checkbox(t(lang_code, "map_points"), value=True)
+SHOW_CONTOURS = st.sidebar.checkbox(t(lang_code, "map_contours"), value=True)
+
 params = {
     "Z_MAX": float(Z_MAX),
     "N_Z": int(N_Z),
@@ -730,7 +824,9 @@ with col1:
         mime="image/png",
     )
 
-    
+    # ---------------------------
+    # Embedded "Geoportail-like" basemap (Italy-centered) + contour layer (red)
+    # ---------------------------
     ITALY_CENTER = [41.8719, 12.5674]  # lat, lon
     DEFAULT_ZOOM = 5
 
@@ -741,6 +837,7 @@ with col1:
         tiles=None,
     )
 
+    # ESRI basemaps
     folium.TileLayer(
         tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
         attr="Esri",
@@ -757,9 +854,27 @@ with col1:
         control=True,
     ).add_to(m)
 
-    folium.LayerControl().add_to(m)
+    # Optional: points from df if X/Y look like lon/lat
+    if SHOW_MAP_POINTS and ("X" in df.columns) and ("Y" in df.columns):
+        pts_xy = df[["X", "Y"]].dropna()
+        if len(pts_xy) > 0 and _looks_like_lonlat(pts_xy):
+            for _, r in pts_xy.iterrows():
+                lon = float(r["X"])
+                lat = float(r["Y"])
+                folium.CircleMarker(
+                    location=[lat, lon],
+                    radius=4,
+                    fill=True,
+                    fill_opacity=0.9,
+                ).add_to(m)
+        else:
+            st.info(t(lang_code, "map_warn_coords"))
 
-    st_folium(m, width=None, height=500)
+    # Contours layer (GeoJSON preferred; otherwise SHP)
+    add_contours_layer(m, lang_code=lang_code, show_contours=SHOW_CONTOURS)
+
+    folium.LayerControl().add_to(m)
+    st_folium(m, width=None, height=int(MAP_HEIGHT))
 
 with col2:
     st.subheader(t(lang_code, "summary"))
