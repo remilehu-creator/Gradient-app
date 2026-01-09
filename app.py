@@ -22,6 +22,8 @@ from streamlit_folium import st_folium
 BASE_DIR = Path(__file__).parent
 EMBEDDED_CSV = BASE_DIR / "data" / "gradient_geo.csv"
 CONTOUR_GEOJSON = BASE_DIR / "data" / "contours_gradient.geojson"
+POLYGON_GEOJSON = BASE_DIR / "data" / "AOI_Ladispoli.geojson"
+
 
 # UTM 33N -> WGS84 for map (your case)
 #TRANSFORMER_UTM33N_TO_WGS84 = Transformer.from_crs("EPSG:32633", "EPSG:4326", always_xy=True)
@@ -630,6 +632,23 @@ def add_contours_geojson_layer(
         ).add_to(m)
 
 
+def add_polygon_geojson_layer(m: folium.Map, poly_geojson: dict):
+    """
+    Add polygon layer with a nice semi-transparent fill.
+    """
+    def style_fn(feature):
+        return {
+            "color": "#0055ff",     # contour
+            "weight": 2,
+            "fillColor": "#0055ff", # fill
+            "fillOpacity": 0.20,
+        }
+
+    folium.GeoJson(
+        poly_geojson,
+        name="Polygon",
+        style_function=style_fn,
+    ).add_to(m)
 
 
 # ---------------------------
@@ -791,6 +810,7 @@ MAP_HEIGHT = st.sidebar.slider(t(lang_code, "map_height"), 220, 1200, 550, 10)
 SHOW_CONTOURS = st.sidebar.checkbox(t(lang_code, "map_contours"), value=True)
 SHOW_LABELS_20 = st.sidebar.checkbox(t(lang_code, "map_labels"), value=True)
 LEVEL_FIELD = st.sidebar.text_input(t(lang_code, "map_level_field"), value="ELEV")
+SHOW_POLYGON = st.sidebar.checkbox("Show polygon layer", value=True)
 
 params = {
     "Z_MAX": float(Z_MAX),
@@ -918,6 +938,14 @@ with col1:
                 level_field=LEVEL_FIELD,
                 show_labels_every_20=SHOW_LABELS_20,
             )
+            
+        # Polygon layer (GeoJSON)
+    if SHOW_POLYGON:
+        poly = load_geojson(POLYGON_GEOJSON)
+        if poly is None:
+            st.warning("Polygon GeoJSON not found: data/polygon.geojson")
+        else:
+            add_polygon_geojson_layer(m, poly)
 
     folium.LayerControl().add_to(m)
     st_folium(m, width=None, height=int(MAP_HEIGHT))
