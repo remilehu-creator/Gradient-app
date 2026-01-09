@@ -544,24 +544,33 @@ def add_contours_geojson_layer(
     level_field: str,
     show_labels_every_20: bool,
 ):
-    """
-    Add red contour lines, and optional labels every 20 units.
-    Labels are placed as small DivIcon markers at the approximate midpoint of each line.
-    """
-
     def style_fn(feature):
         return {"color": "red", "weight": 2, "opacity": 0.9}
 
-    # Lines layer
+    # Draw contours
     folium.GeoJson(
         contours_geojson,
         name="Contours",
         style_function=style_fn,
     ).add_to(m)
 
-    # Labels every 20 (visible)
     if not show_labels_every_20:
         return
+
+    def parse_level(val):
+        """Robust parse: accepts 20, '20', '20.0', '20,0', '20 m', etc."""
+        if val is None:
+            return None
+        s = str(val).strip()
+        s = s.replace(",", ".")
+        # keep digits, dot, minus
+        cleaned = "".join(ch for ch in s if (ch.isdigit() or ch in ".-"))
+        if cleaned in ("", ".", "-", "-."):
+            return None
+        try:
+            return float(cleaned)
+        except Exception:
+            return None
 
     feats = contours_geojson.get("features", [])
     for feat in feats:
@@ -570,42 +579,39 @@ def add_contours_geojson_layer(
         if not geom:
             continue
 
-        val = props.get(level_field)
-        if val is None:
+        val_num = parse_level(props.get(level_field))
+        if val_num is None:
             continue
 
-        # try parse numeric
-        try:
-            val_num = float(val)
-        except Exception:
+        # robust "every 20": round then modulo
+        val_int = int(round(val_num))
+        if val_int % 20 != 0:
             continue
 
-        # only multiples of 20
-        if (val_num % 20) != 0:
+        pt = _label_point_lonlat(geom)
+        if pt is None:
             continue
 
-        mid = _line_midpoint_lonlat(geom)
-        if mid is None:
-            continue
-
-        lon, lat = mid
+        lon, lat = pt
 
         folium.Marker(
             location=[lat, lon],
             icon=folium.DivIcon(
                 html=f"""
                 <div style="
-                    font-size:10px;
-                    color:white;
-                    background:rgba(255,255,255,0.85);
-                    padding:2px 4px;
-                    #border:1px solid rgba(255,0,0,0.5);
-                    #border-radius:3px;
+                    font-size:12px;
+                    font-weight:600;
+                    color:red;
+                    background:rgba(255,255,255,0.90);
+                    padding:2px 5px;
+                    border:1px solid rgba(255,0,0,0.6);
+                    border-radius:3px;
                     white-space:nowrap;
-                ">{int(val_num) if val_num.is_integer() else val_num}</div>
+                ">{val_int}</div>
                 """
             ),
         ).add_to(m)
+
 
 
 # ---------------------------
