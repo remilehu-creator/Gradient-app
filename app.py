@@ -13,22 +13,18 @@ import streamlit as st
 
 import folium
 from streamlit_folium import st_folium
+from pyproj import Transformer
 
 
 # ---------------------------
-# Files (embedded data)
+# Paths
 # ---------------------------
 BASE_DIR = Path(__file__).parent
 EMBEDDED_CSV = BASE_DIR / "data" / "gradient_geo.csv"
-
-# Shapefile path (put your shapefile components in this folder)
-# data/contours/contours.shp + .shx + .dbf + .prj
-CONTOUR_SHP = BASE_DIR / "data" / "gradient_geo.shp"
-CONTOUR_SHP_2 = BASE_DIR / "data" / "AOI_Ladispoli.shp"
-
-# Optional: if you provide a GeoJSON instead, the app will prefer it (more reliable)
-# data/contours_gradient.geojson
 CONTOUR_GEOJSON = BASE_DIR / "data" / "contours_gradient.geojson"
+
+# UTM 33N -> WGS84 for map (your case)
+TRANSFORMER_UTM33N_TO_WGS84 = Transformer.from_crs("EPSG:32633", "EPSG:4326", always_xy=True)
 
 
 # ---------------------------
@@ -106,7 +102,6 @@ TRANSLATIONS = {
         "legend_frame": "Legend box",
         "legend_ncol": "Legend columns",
         "legend_font": "Legend font size",
-        "map_warn_coords": "Points not displayed (X/Y don't look like lon/lat).",
         "legend_yoffset": "Legend vertical position",
         "sidebar_texts": "9) Text labels",
         "env_label": "Envelope label",
@@ -132,11 +127,13 @@ TRANSLATIONS = {
         "default_err_label": "Measured ±1σ",
         "default_grad_mean_label": "Mean gradient",
         "default_grad_local_label": "Ladispoli gradient",
-        "map_title": "Basemap & geothermal gradient contours",
+        "map_title": "Basemap & geothermal contours",
         "map_height": "Map height",
-        "map_points": "Show points (if X=lon, Y=lat)",
-        "map_contours": "Show contour lines (SHP/GeoJSON) in red",
-        "map_missing_contours": "Contour file not found. Put shapefile in data/contours/ or provide data/contours_gradient.geojson.",
+        "map_points": "Show points (UTM 33N -> lon/lat)",
+        "map_contours": "Show contour lines (GeoJSON) in red",
+        "map_labels": "Show labels every 20",
+        "map_missing_contours": "Contour GeoJSON not found: data/contours_gradient.geojson",
+        "map_level_field": "Contour field name (level)",
     },
     "fr": {
         "lang_name": "Français",
@@ -144,7 +141,7 @@ TRANSLATIONS = {
         "title": "Gradient géothermique — entièrement paramétrable",
         "sidebar_data": "1) Données",
         "upload_csv": "Charger le CSV (gradient_geo.csv)",
-        "use_uploaded": "Utiliser le CSV uploadé (sinon utiliser le fichier embarqué)",
+        "use_uploaded": "Utiliser le CSV uploadé (sinon fichier embarqué)",
         "separator": "Séparateur",
         "demo_mode": "Mode démo (ignore le fichier)",
         "demo_info": "Mode démo : données synthétiques.",
@@ -234,12 +231,13 @@ TRANSLATIONS = {
         "default_err_label": "±1σ mesuré",
         "default_grad_mean_label": "Gradient moyen",
         "default_grad_local_label": "Gradient Ladispoli",
-        "map_title": "Fond de carte & courbes de niveaux du gradient",
+        "map_title": "Fond de carte & courbes du gradient",
         "map_height": "Hauteur de la carte",
-        "map_points": "Afficher les points (si X=lon, Y=lat)",
-        "map_contours": "Afficher les courbes (SHP/GeoJSON) en rouge",
-        "map_warn_coords": "Points non affichés (X/Y ne ressemblent pas à lon/lat).",
-        "map_missing_contours": "Fichier de courbes introuvable. Mets le SHP dans data/contours/ ou fournis data/contours_gradient.geojson.",
+        "map_points": "Afficher les points (UTM 33N -> lon/lat)",
+        "map_contours": "Afficher les courbes (GeoJSON) en rouge",
+        "map_labels": "Afficher labels tous les 20",
+        "map_missing_contours": "GeoJSON des courbes introuvable : data/contours_gradient.geojson",
+        "map_level_field": "Nom du champ (niveau)",
     },
     "it": {
         "lang_name": "Italiano",
@@ -247,7 +245,7 @@ TRANSLATIONS = {
         "title": "Gradiente geotermico — completamente regolabile",
         "sidebar_data": "1) Dati",
         "upload_csv": "Carica CSV (gradient_geo.csv)",
-        "use_uploaded": "Usa CSV caricato (altrimenti usa file incorporato)",
+        "use_uploaded": "Usa CSV caricato (altrimenti file incorporato)",
         "separator": "Separatore",
         "demo_mode": "Modalità demo (ignora il file)",
         "demo_info": "Modalità demo: dati sintetici.",
@@ -337,12 +335,13 @@ TRANSLATIONS = {
         "default_err_label": "±1σ misurato",
         "default_grad_mean_label": "Gradiente medio",
         "default_grad_local_label": "Gradiente Ladispoli",
-        "map_title": "Basemap e curve di livello del gradiente",
+        "map_title": "Basemap & curve del gradiente",
         "map_height": "Altezza mappa",
-        "map_points": "Mostra punti (se X=lon, Y=lat)",
-        "map_contours": "Mostra curve (SHP/GeoJSON) in rosso",
-        "map_warn_coords": "Punti non mostrati (X/Y non sembrano lon/lat).",
-        "map_missing_contours": "File curve non trovato. Metti lo SHP in data/contours/ o fornisci data/contours_gradient.geojson.",
+        "map_points": "Mostra punti (UTM 33N -> lon/lat)",
+        "map_contours": "Mostra curve (GeoJSON) in rosso",
+        "map_labels": "Mostra etichette ogni 20",
+        "map_missing_contours": "GeoJSON curve non trovato: data/contours_gradient.geojson",
+        "map_level_field": "Nome del campo (livello)",
     },
 }
 
@@ -391,7 +390,7 @@ def make_figure(depths, T_mean, T_std, params, lang):
     z_line = np.linspace(0.0, Z_MAX, int(N_Z))
 
     # Fit on mean -> slope only (gradient)
-    b_mean, a_mean = np.polyfit(depths, T_mean, 1)
+    b_mean, _a_mean = np.polyfit(depths, T_mean, 1)
     G_mean_profile = b_mean * 1000.0  # °C/km
     b_mean_m = G_mean_profile / 1000.0  # °C/m
 
@@ -428,65 +427,53 @@ def make_figure(depths, T_mean, T_std, params, lang):
     fig = plt.figure(figsize=params["FIGSIZE"])
 
     plt.fill_betweenx(
-        z_line,
-        T_env_low,
-        T_env_high,
-        color=params["ENV_COLOR"],
-        alpha=params["ENV_ALPHA"],
-        label=params["ENV_LABEL"],
+        z_line, T_env_low, T_env_high,
+        color=params["ENV_COLOR"], alpha=params["ENV_ALPHA"],
+        label=params["ENV_LABEL"]
     )
 
     plt.plot(
-        T_line,
-        z_line,
-        color=params["MEAN_COLOR"],
-        linewidth=params["MEAN_LW"],
+        T_line, z_line,
+        color=params["MEAN_COLOR"], linewidth=params["MEAN_LW"],
         linestyle=params["MEAN_LS"],
-        label=params["MEAN_LABEL"],
+        label=params["MEAN_LABEL"]
     )
 
     if params["SHOW_POINTS"]:
         plt.plot(
-            T_mean,
-            depths,
-            marker=params["PTS_MARKER"],
-            markersize=params["PTS_MS"],
-            color=params["PTS_COLOR"],
-            linestyle="none",
-            label=params["PTS_LABEL"],
+            T_mean, depths,
+            marker=params["PTS_MARKER"], markersize=params["PTS_MS"],
+            color=params["PTS_COLOR"], linestyle="none",
+            label=params["PTS_LABEL"]
         )
 
     if params["SHOW_ERR"]:
         plt.errorbar(
-            T_mean,
-            depths,
-            xerr=T_std,
+            T_mean, depths, xerr=T_std,
             fmt="none",
             ecolor=params["ERR_ECOLOR"],
             elinewidth=params["ERR_ELW"],
             capsize=params["ERR_CAP"],
             alpha=params["ERR_ALPHA"],
-            label=params["ERR_LABEL"],
+            label=params["ERR_LABEL"]
         )
 
     if params["SHOW_GRAD_MEAN"]:
         plt.plot(
-            T_grad_mean,
-            z_line,
+            T_grad_mean, z_line,
             color=params["GRAD_MEAN_COLOR"],
             linestyle=params["GRAD_MEAN_LS"],
             linewidth=params["GRAD_MEAN_LW"],
-            label=f"{params['GRAD_MEAN_LABEL']} : {G_mean_profile:.1f} °C/km",
+            label=f"{params['GRAD_MEAN_LABEL']} : {G_mean_profile:.1f} °C/km"
         )
 
     if params["SHOW_GRAD_LADISPOLI"]:
         plt.plot(
-            T_grad_ladispoli,
-            z_line,
+            T_grad_ladispoli, z_line,
             color=params["GRAD_LADISPOLI_COLOR"],
             linestyle=params["GRAD_LADISPOLI_LS"],
             linewidth=params["GRAD_LADISPOLI_LW"],
-            label=f"{params['GRAD_LADISPOLI_LABEL']} : {G_LADISPOLI:.0f} °C/km",
+            label=f"{params['GRAD_LADISPOLI_LABEL']} : {G_LADISPOLI:.0f} °C/km"
         )
 
     plt.ylim(Z_MAX, 0)
@@ -511,109 +498,132 @@ def make_figure(depths, T_mean, T_std, params, lang):
             bbox_to_anchor=(0.5, params["LEGEND_YOFFSET"]),
             ncol=params["LEGEND_NCOL"],
             frameon=params["LEGEND_FRAME"],
-            fontsize=params["LEGEND_FONT"],
+            fontsize=params["LEGEND_FONT"]
         )
 
     plt.tight_layout()
     return fig
 
 
-def _looks_like_lonlat(df_xy: pd.DataFrame) -> bool:
-    # Heuristic: lon in [-180, 180], lat in [-90, 90]
-    return (
-        df_xy["X"].between(-180, 180).all()
-        and df_xy["Y"].between(-90, 90).all()
-    )
+def utm33_to_lonlat(df_xy: pd.DataFrame) -> pd.DataFrame:
+    """
+    Convert X/Y from UTM 33N (EPSG:32633) to lon/lat (EPSG:4326).
+    Returns a new df with columns lon, lat.
+    """
+    xy = df_xy[["X", "Y"]].dropna()
+    if xy.empty:
+        return pd.DataFrame(columns=["lon", "lat"])
+
+    xs = xy["X"].to_numpy(dtype=float)
+    ys = xy["Y"].to_numpy(dtype=float)
+    lons, lats = TRANSFORMER_UTM33N_TO_WGS84.transform(xs, ys)
+
+    out = pd.DataFrame({"lon": lons, "lat": lats}, index=xy.index)
+    return out
 
 
-def add_contours_layer(m: folium.Map, lang_code: str, show_contours: bool = True):
-    if not show_contours:
+def load_geojson(path: Path):
+    if not path.exists():
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _line_midpoint_lonlat(geometry):
+    """
+    Return an approximate midpoint (lon, lat) of a LineString or MultiLineString.
+    If geometry is not supported, return None.
+    """
+    gtype = geometry.get("type")
+    coords = geometry.get("coordinates")
+
+    if gtype == "LineString" and isinstance(coords, list) and len(coords) > 1:
+        mid = coords[len(coords) // 2]
+        return float(mid[0]), float(mid[1])
+
+    if gtype == "MultiLineString" and isinstance(coords, list) and len(coords) > 0:
+        # choose the longest line for labeling
+        best = None
+        best_len = -1
+        for line in coords:
+            if isinstance(line, list) and len(line) > best_len:
+                best = line
+                best_len = len(line)
+        if best and len(best) > 1:
+            mid = best[len(best) // 2]
+            return float(mid[0]), float(mid[1])
+
+    return None
+
+
+def add_contours_geojson_layer(
+    m: folium.Map,
+    contours_geojson: dict,
+    level_field: str,
+    show_labels_every_20: bool,
+):
+    """
+    Add red contour lines, and optional labels every 20 units.
+    Labels are placed as small DivIcon markers at the approximate midpoint of each line.
+    """
+
+    def style_fn(feature):
+        return {"color": "red", "weight": 2, "opacity": 0.9}
+
+    # Lines layer
+    folium.GeoJson(
+        contours_geojson,
+        name="Contours",
+        style_function=style_fn,
+    ).add_to(m)
+
+    # Labels every 20 (visible)
+    if not show_labels_every_20:
         return
 
-    # Prefer GeoJSON if present (lighter + more reliable)
-    if CONTOUR_GEOJSON.exists():
-        with open(CONTOUR_GEOJSON, "r", encoding="utf-8") as f:
-            contours = json.load(f)
+    feats = contours_geojson.get("features", [])
+    for feat in feats:
+        props = feat.get("properties", {}) or {}
+        geom = feat.get("geometry", {}) or {}
+        if not geom:
+            continue
 
-        folium.GeoJson(
-            contours,
-            name="Geothermal gradient contours",
-            style_function=lambda feature: {
-                "color": "red",
-                "weight": 2,
-                "opacity": 0.9,
-            },
+        val = props.get(level_field)
+        if val is None:
+            continue
+
+        # try parse numeric
+        try:
+            val_num = float(val)
+        except Exception:
+            continue
+
+        # only multiples of 20
+        if (val_num % 20) != 0:
+            continue
+
+        mid = _line_midpoint_lonlat(geom)
+        if mid is None:
+            continue
+
+        lon, lat = mid
+
+        folium.Marker(
+            location=[lat, lon],
+            icon=folium.DivIcon(
+                html=f"""
+                <div style="
+                    font-size:10px;
+                    color:red;
+                    background:rgba(255,255,255,0.85);
+                    padding:2px 4px;
+                    border:1px solid rgba(255,0,0,0.5);
+                    border-radius:3px;
+                    white-space:nowrap;
+                ">{int(val_num) if val_num.is_integer() else val_num}</div>
+                """
+            ),
         ).add_to(m)
-        return
-
-    # Else try SHP (requires geopandas)
-    if CONTOUR_SHP.exists():
-        try:
-            import geopandas as gpd  # imported only if needed
-
-            gdf = gpd.read_file(CONTOUR_SHP)
-
-            # Reproject to WGS84 for web maps
-            try:
-                gdf = gdf.to_crs(epsg=4326)
-            except Exception:
-                # If CRS is missing/broken, keep as-is (but map may be wrong)
-                pass
-
-            geojson_str = gdf.to_json()
-            contours = json.loads(geojson_str)
-
-            folium.GeoJson(
-                contours,
-                name="Geothermal gradient contours",
-                style_function=lambda feature: {
-                    "color": "red",
-                    "weight": 2,
-                    "opacity": 0.9,
-                },
-            ).add_to(m)
-            return
-
-        except Exception as e:
-            st.warning(f"Contours SHP could not be loaded: {e}")
-            return
-
-    st.warning(t(lang_code, "map_missing_contours"))
-
- # Else try SHP (requires geopandas)
-    if CONTOUR_SHP_2.exists():
-        try:
-            import geopandas as gpd  # imported only if needed
-
-            gdf = gpd.read_file(CONTOUR_SHP_2)
-
-            # Reproject to WGS84 for web maps
-            try:
-                gdf = gdf.to_crs(epsg=4326)
-            except Exception:
-                # If CRS is missing/broken, keep as-is (but map may be wrong)
-                pass
-
-            geojson_str = gdf.to_json()
-            contours = json.loads(geojson_str)
-
-            folium.GeoJson(
-                contours,
-                name="Geothermal gradient contours",
-                style_function=lambda feature: {
-                    "color": "red",
-                    "weight": 2,
-                    "opacity": 0.9,
-                },
-            ).add_to(m)
-            return
-
-        except Exception as e:
-            st.warning(f"Contours SHP could not be loaded: {e}")
-            return
-
-    st.warning(t(lang_code, "map_missing_contours"))
-
 
 
 # ---------------------------
@@ -627,7 +637,7 @@ lang_code = st.sidebar.selectbox(
     "Select UI language",
     options=[code for code, _ in LANG_OPTIONS],
     format_func=lambda c: dict(LANG_OPTIONS)[c],
-    index=0,
+    index=0
 )
 
 st.title(t(lang_code, "title"))
@@ -653,7 +663,6 @@ if use_demo:
     )
     df, depths, T_mean, T_std = compute_stats(df_demo)
     st.info(t(lang_code, "demo_info"))
-
 else:
     try:
         if use_uploaded and uploaded is not None:
@@ -666,7 +675,6 @@ else:
             st.caption(f"{t(lang_code, 'using_embedded')} {EMBEDDED_CSV.name} — {t(lang_code, 'loaded_rows')}: {len(df_raw)}")
 
         df, depths, T_mean, T_std = compute_stats(df_raw)
-
     except Exception as e:
         st.error(f"{t(lang_code, 'csv_error')} {e}")
         st.stop()
@@ -772,9 +780,11 @@ GRAD_LADISPOLI_LABEL = st.sidebar.text_input(t(lang_code, "grad_local_label"), v
 
 # Map controls
 st.sidebar.header(t(lang_code, "map_title"))
-MAP_HEIGHT = st.sidebar.slider(t(lang_code, "map_height"), 220, 900, 450, 10)
-SHOW_MAP_POINTS = st.sidebar.checkbox(t(lang_code, "map_points"), value=True)
+MAP_HEIGHT = st.sidebar.slider(t(lang_code, "map_height"), 220, 1200, 550, 10)
+SHOW_MAP_POINTS = st.sidebar.checkbox(t(lang_code, "map_points"), value=False)
 SHOW_CONTOURS = st.sidebar.checkbox(t(lang_code, "map_contours"), value=True)
+SHOW_LABELS_20 = st.sidebar.checkbox(t(lang_code, "map_labels"), value=True)
+LEVEL_FIELD = st.sidebar.text_input(t(lang_code, "map_level_field"), value="LEVEL")
 
 params = {
     "Z_MAX": float(Z_MAX),
@@ -861,7 +871,7 @@ with col1:
     )
 
     # ---------------------------
-    # Embedded "Geoportail-like" basemap (Italy-centered) + contour layer (red)
+    # Embedded "Geoportail-like" basemap (Italy-centered) + contours + labels every 20
     # ---------------------------
     ITALY_CENTER = [41.8719, 12.5674]  # lat, lon
     DEFAULT_ZOOM = 5
@@ -890,27 +900,34 @@ with col1:
         control=True,
     ).add_to(m)
 
-    # Optional: points from df if X/Y look like lon/lat
+    # Optional: points from df converted from UTM 33N
     if SHOW_MAP_POINTS and ("X" in df.columns) and ("Y" in df.columns):
-        pts_xy = df[["X", "Y"]].dropna()
-        if len(pts_xy) > 0 and _looks_like_lonlat(pts_xy):
-            for _, r in pts_xy.iterrows():
-                lon = float(r["X"])
-                lat = float(r["Y"])
+        lonlat_df = utm33_to_lonlat(df[["X", "Y"]])
+        if not lonlat_df.empty:
+            for _, r in lonlat_df.iterrows():
                 folium.CircleMarker(
-                    location=[lat, lon],
+                    location=[float(r["lat"]), float(r["lon"])],
                     radius=4,
                     fill=True,
                     fill_opacity=0.9,
+                    opacity=0.9,
                 ).add_to(m)
-        #else:
-           # st.info(t(lang_code, "map_warn_coords"))
 
-    # Contours layer (GeoJSON preferred; otherwise SHP)
-    add_contours_layer(m, lang_code=lang_code, show_contours=SHOW_CONTOURS)
+    # Contours (GeoJSON) + labels every 20
+    if SHOW_CONTOURS:
+        contours = load_geojson(CONTOUR_GEOJSON)
+        if contours is None:
+            st.warning(t(lang_code, "map_missing_contours"))
+        else:
+            add_contours_geojson_layer(
+                m=m,
+                contours_geojson=contours,
+                level_field=LEVEL_FIELD,
+                show_labels_every_20=SHOW_LABELS_20,
+            )
 
     folium.LayerControl().add_to(m)
-    st_folium(m, width=None, height=500)
+    st_folium(m, width=None, height=int(MAP_HEIGHT))
 
 with col2:
     st.subheader(t(lang_code, "summary"))
