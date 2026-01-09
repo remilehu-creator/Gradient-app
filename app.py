@@ -24,7 +24,7 @@ EMBEDDED_CSV = BASE_DIR / "data" / "gradient_geo.csv"
 # Shapefile path (put your shapefile components in this folder)
 # data/contours/contours.shp + .shx + .dbf + .prj
 CONTOUR_SHP = BASE_DIR / "data" / "gradient_geo.shp"
-CONTOUR_SHP2 = BASE_DIR / "data" / "AOI_Ladispoli.shp"
+CONTOUR_SHP_2 = BASE_DIR / "data" / "AOI_Ladispoli.shp"
 
 # Optional: if you provide a GeoJSON instead, the app will prefer it (more reliable)
 # data/contours_gradient.geojson
@@ -581,11 +581,11 @@ def add_contours_layer(m: folium.Map, lang_code: str, show_contours: bool = True
     st.warning(t(lang_code, "map_missing_contours"))
 
  # Else try SHP (requires geopandas)
-    if CONTOUR_SHP2.exists():
+    if CONTOUR_SHP_2.exists():
         try:
             import geopandas as gpd  # imported only if needed
 
-            gdf = gpd.read_file(CONTOUR_SHP2)
+            gdf = gpd.read_file(CONTOUR_SHP_2)
 
             # Reproject to WGS84 for web maps
             try:
