@@ -617,7 +617,7 @@ def add_contours_geojson_layer(
                     font-weight:700;
                     color:#b00000;
                     background:rgba(255,255,255,0.95);
-                    padding:6px 10px;
+                    padding:10px 10px;
                     border:2px solid #b00000;
                     border-radius:8px;
                     box-shadow:0 1px 4px rgba(0,0,0,0.35);
